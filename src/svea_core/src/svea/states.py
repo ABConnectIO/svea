@@ -368,7 +368,7 @@ class VehicleState(object):
                 twist = twist.twist
             except AttributeError:
                 break
-        self.v = twist.linear.x
+        self.v = sqrt(twist.linear.x**2 + twist.linear.y**2)
         try:
             self.covariance[self.V_IX, self.V_IX] = twist_msg.covariance[0]
         except AttributeError:
