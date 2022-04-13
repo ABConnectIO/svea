@@ -205,6 +205,8 @@ connection.addDeviceById("svea").then((vehicle) => {
 });
 ```
 
+**IMPORTANT** Make sure that you run `vehicle.js` from a terminal window which sources the `devel/setup.bash` of **this** repository.
+
 ## Integration ZedM camera
 
 All the work you have already done for the ZedM camera can be included to the `vehicle.js` and `controller.js` examples above. You launch the stereo camera along side the vehicle simulation as follows:
