@@ -131,11 +131,7 @@ should always start in simulation and code can be directly ported to the real
 cars. However, this does not mean the code will work on a
 real vehicle without further tuning or changes.
 
-There are three pre-written scripts to serve as examples of how to use the
-core library. See and read the source code in
-`svea_core/scripts/core_examples`.
-
-For PVK, the following simulation provides a vehicle driving around a circuit at floor2 in the Q-building:
+For PVK, the following simulation provides a vehicle driving around a circuit at floor 2 in the Q-building:
 
 ```bash
 roslaunch svea_core floor2.launch
@@ -145,7 +141,7 @@ where you should see something that looks like:
 
 ![key-teleop example](./media/floor2_rviz.png)
 
-Now you are ready to read through the tutorials! You can find them in `svea_starter/docs/tutorials`.
+For more info, make sure to go through the tutorials. You can find them in `/docs/tutorials`.
 
 ## Using the Lidar and vehicle positions for PVK
 
@@ -154,7 +150,7 @@ When you launch the vehicle example above (`roslaunch svea_core floor2.launch`),
 -   `/scan` of type "sensor_msgs/LaserScan"
 -   `/state` of type "svea_msgs/VehicleState"
 
-Here is an example of how you could utilize these two topics to publish them over the ABConnect software to the controller peer (in your case to the Unity client). The following examples are based on the [simple_nodejs_demo](https://github.com/ABConnectIO/simple_nodejs_demo)
+Here is an example of how you could utilize these two topics to publish them over the ABConnect software to the controller device (in your case to the Unity client). The following examples are based on the [simple_nodejs_demo](https://github.com/ABConnectIO/simple_nodejs_demo) example.
 
 ### Modifications to `vehicle.js`
 
@@ -197,6 +193,8 @@ const connection = new ABConnect(
         category: "tower",
     }
 );
+
+// Add co-device
 connection.addDeviceById("svea").then((vehicle) => {
     vehicle.addSubscriber(0, "/state", "svea_msgs/VehicleState", {}, (msg) => {
         console.log("state:", msg);
@@ -211,7 +209,7 @@ connection.addDeviceById("svea").then((vehicle) => {
 
 All the work you have already done for the ZedM camera can be included to the `vehicle.js` and `controller.js` examples above. You launch the stereo camera along side the vehicle simulation as follows:
 
--   Open a new terminal window
+-   open a new terminal window
 -   `cd` to the workspace where the ZedM code lives
 -   source `devel/setup.bash` of that workspace
--   Launch the ZedM camera with `roslaunch zed_wrapper zedm.launch`
+-   launch the ZedM camera with `roslaunch zed_wrapper zedm.launch`
