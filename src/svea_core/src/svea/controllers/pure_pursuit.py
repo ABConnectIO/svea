@@ -2,6 +2,7 @@
 Adapted from Atsushi Sakai's PythonRobotics pure pursuit example
 """
 import math
+import numpy as np
 
 class PurePursuitController(object):
 
@@ -93,6 +94,7 @@ class PurePursuitSpeedController(object):
         self.traj_x = []
         self.traj_y = []
         self.target = None
+        self.target_ind = 0
         # initialize with 0 velocity
         self.target_velocity = 0.0
         self.error_sum = 0.0
@@ -139,22 +141,27 @@ class PurePursuitSpeedController(object):
 
     def _calc_target_index(self, state):
         # search nearest point index
-        dx = [state.x - icx for icx in self.traj_x]
-        dy = [state.y - icy for icy in self.traj_y]
-        d = [abs(math.sqrt(idx ** 2 + idy ** 2)) for (idx, idy) in zip(dx, dy)]
-        ind = d.index(min(d))
-        dist = 0.0
+        x = np.array([state.x,state.y])
+        curr_ind = self.target_ind % len(self.traj_x)
+        target = np.array([self.traj_x[curr_ind], self.traj_y[curr_ind]])
         Lf = self.k * state.v + self.Lfc
+        if np.linalg.norm(x-target) < Lf:
+            self.target_ind +=1
+        # dx = [state.x - icx for icx in self.traj_x]
+        # dy = [state.y - icy for icy in self.traj_y]
+        # d = [abs(math.sqrt(idx ** 2 + idy ** 2)) for (idx, idy) in zip(dx, dy)]
+        # ind = d.index(min(d))
+        # dist = 0.0
 
-        # search look ahead target point index
-        while Lf > dist and (ind + 1) < len(self.traj_x):
-            dx = self.traj_x[ind + 1] - self.traj_x[ind]
-            dy = self.traj_y[ind + 1] - self.traj_y[ind]
-            dist += math.sqrt(dx ** 2 + dy ** 2)
-            ind += 1
+        # # search look ahead target point index
+        # while Lf > dist and (ind + 1) < len(self.traj_x):
+        #     dx = self.traj_x[ind + 1] - self.traj_x[ind]
+        #     dy = self.traj_y[ind + 1] - self.traj_y[ind]
+        #     dist += math.sqrt(dx ** 2 + dy ** 2)
+        #     ind += 1
 
-        # terminating condition
-        if dist < 0.1:
-            self.is_finished = True
+        # # terminating condition
+        # if dist < 0.1:
+        #     self.is_finished = True
 
-        return ind
+        return self.target_ind % len(self.traj_x)

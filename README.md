@@ -1,12 +1,14 @@
-# SVEA Starter Suite
+# SVEA Starter Suite (PVK Edition)
 
 ### Quicklinks:
-- [SVEA website](https://svea.eecs.kth.se)
-- [Tutorials](https://github.com/KTH-SML/svea/tree/main/docs/tutorials)
-- [Sim to Real Tips](https://github.com/KTH-SML/svea#going-from-simulation-to-real)
-- [Testing](https://github.com/KTH-SML/svea#testing)
+
+-   [SVEA website](https://svea.eecs.kth.se)
+-   [Tutorials](https://github.com/KTH-SML/svea/tree/main/docs/tutorials)
+-   [Sim to Real Tips](https://github.com/KTH-SML/svea#going-from-simulation-to-real)
+-   [Testing](https://github.com/KTH-SML/svea#testing)
 
 ## A short description
+
 This repo contains a basic library of python objects and scripts to make
 development on the Small-Vehicles-for-Autonomy (SVEA) platform simpler
 and cleaner.
@@ -18,6 +20,7 @@ wrap different ROS entities in Python objects, while exposing only the useful
 features with object-oriented interfaces.
 
 ## Useful to know before starting
+
 Before continuing to the next sections, consider taking some time to read up on
 two important concepts for this code base: the **Robotic Operating System (ROS)**
 and **Object Oriented Programming (OOP)**.
@@ -35,6 +38,7 @@ To read up on OOP, check out Real Python's
 # Installation
 
 ## System Requirements
+
 This library is developed on and intended for systems running:
 
 1. Ubuntu 18.04 (installation tutorial [here](https://ubuntu.com/tutorials/tutorial-install-ubuntu-desktop#1-overview))
@@ -74,12 +78,13 @@ sudo apt upgrade
 before continuing onto installing the library.
 
 ## Installing the library
+
 Start by going to the folder where you want the code to reside.
 For example, choose the home directory or a directory for keeping projects in.
 Once you are in the chosen directory, use the command:
 
 ```bash
-git clone https://github.com/KTH-SML/svea
+git clone https://github.com/ABConnectIO/svea.git
 ```
 
 to download the library. Then, a new directory will appear called
@@ -87,6 +92,12 @@ to download the library. Then, a new directory will appear called
 
 ```bash
 cd svea
+```
+
+go to the branch designated for the PVK course
+
+```bash
+git checkout pvk
 ```
 
 To install all of the ROS dependencies that you are missing for this library run:
@@ -103,20 +114,12 @@ source devel/setup.bash
 rospack profile
 ```
 
-To make sure the libraries are linked in the future, also call (**you need to replace
-`<path-to-svea>` with the file path to whever you cloned "svea_starter", e.g.
-`/home/nvidia/svea/devel/setup.bash`**):
-
-```bash
-echo "source <path-to-svea>/devel/setup.bash" >> ~/.bashrc
-source ~/.bashrc
-```
-
-**Note, you only need to do this once.**
+**IMPORTANT**: Remember to source the workspace `source devel/setup.bash` for every new terminal you open.
 
 # Usage
 
 The intended workflow with the code base is as follows:
+
 1. Write new features/software
 2. Debug the new contributions in simulation
 3. Perform basic tuning and adjustments in simulation
@@ -132,29 +135,7 @@ There are three pre-written scripts to serve as examples of how to use the
 core library. See and read the source code in
 `svea_core/scripts/core_examples`.
 
-You can try them out by running one of the two commands:
-
-```bash
-roslaunch svea_core key_teleop.launch
-```
-
-for a keyboard teleop example. Once launched, you should see the following:
-
-![key-teleop example](./media/key_teleop.png)
-
-where you can use arrow keys to control the simulated SVEA car.
-
-For a pure pursuit example, call:
-
-```bash
-roslaunch svea_core pure_pursuit.launch
-```
-
-where you should see something that looks like:
-
-![purepursuit example](./media/purepursuit.png)
-
-To run a more involved example, call:
+For PVK, the following simulation provides a vehicle driving around a circuit at floor2 in the Q-building:
 
 ```bash
 roslaunch svea_core floor2.launch
@@ -166,60 +147,71 @@ where you should see something that looks like:
 
 Now you are ready to read through the tutorials! You can find them in `svea_starter/docs/tutorials`.
 
-## Going from simulation to real
+## Using the Lidar and vehicle positions for PVK
 
-**Note, you only have to follow this section when running the real cars!**
+When you launch the vehicle example above (`roslaunch svea_core floor2.launch`), two important topics will be published
 
-### Adding the low-level interface
+-   `/scan` of type "sensor_msgs/LaserScan"
+-   `/state` of type "svea_msgs/VehicleState"
 
-To your roslaunch file, add
+Here is an example of how you could utilize these two topics to publish them over the ABConnect software to the controller peer (in your case to the Unity client). The following examples are based on the [simple_nodejs_demo](https://github.com/ABConnectIO/simple_nodejs_demo)
 
-```xml
-<!--open serial connection for controlling SVEA-->
-<node pkg="rosserial_python" type="serial_node.py" name="serial_node">
-    <param name="port" value="/dev/ttyACM0"/>
-    <param name="baud" value="250000"/>
-</node>
+### Modifications to `vehicle.js`
+
+The following code runs on the machine which simulates the vehicle
+
+```javascript
+const { ABConnect, ROSPlugin } = require("abconnect-sdk-lite");
+const connection = new ABConnect(
+    {
+        host: "wss://intelligent-cluster-manager.herokuapp.com/signal",
+        auth: "",
+    },
+    {
+        id: "svea",
+        category: "car",
+    },
+    new ROSPlugin(9092)
+);
+
+// Add co-device
+connection.addDeviceById("controller").then((controller) => {
+    controller.addPublisher(0, "/state", "svea_msgs/VehicleState", {});
+    controller.addPublisher(1, "/scan", "sensor_msgs/LaserScan", {});
+});
 ```
 
-### Running localization on the real SVEA
+### Modifications to `controller.js`
 
-Running the localization amounts to adding `localize.launch` to your project launch:
+The following code runs on the machine with the Unity application
 
-```xml
-<include file="$(find svea_sensors)/launch/localize.launch">
-    <arg name="use_rs" value="true"/>
-    <arg name="file_name" value="$(arg map_file)"/>
-</include>
+```javascript
+const { ABConnect } = require("abconnect-sdk-lite");
+const connection = new ABConnect(
+    {
+        host: "wss://intelligent-cluster-manager.herokuapp.com/signal",
+        auth: "",
+    },
+    {
+        id: "controller",
+        category: "tower",
+    }
+);
+connection.addDeviceById("svea").then((vehicle) => {
+    vehicle.addSubscriber(0, "/state", "svea_msgs/VehicleState", {}, (msg) => {
+        console.log("state:", msg);
+    });
+    vehicle.addSubscriber(1, "/scan", "sensor_msgs/LaserScan", {}, (msg) => {
+        console.log("scan:", msg);
+    });
+});
 ```
 
-**Note**, `localize.launch` will run a map_server, so you will not need to include map server in your launch when running on the real vehicle. If you need to install more packages to run `localize.launch`, please refer to the installation instructions in `svea_sensors/README.md`.
+## Integration ZedM camera
 
-### RC Remote
+All the work you have already done for the ZedM camera can be included to the `vehicle.js` and `controller.js` examples above. You launch the stereo camera along side the vehicle simulation as follows:
 
-When the RC remote is not in override mode, it's inputs will still be received by the SVEA platform. This gives you the opportunity to use the remote in your project scripts, whether it's for debugging, data collection, or even imitation learning. The RC input is published to ```/lli/remote```.
-
-### Listening to ROS on another computer
-
-Since you will not be able to drive the SVEA cars with a display plugged in, it can be useful to link a computer that does have a display to the SVEA car's ROS network. This will let you use [RVIZ](http://wiki.ros.org/rviz) and [PlotJuggler](http://wiki.ros.org/plotjuggler) on the computer with a display while accessing the data streams on the SVEA car. This amounts to telling the computer with a display where the ROS master it should be listening to (in this case, it should listen to the ROS master running on the SVEA car) is located on the network. On both the SVEA car and the computer with a display, run:
-
-```bash
-. <svea_starter_root>/scripts/export_ros_ip.sh
-```
-
-You can test if this worked by launching something on the SVEA car in the same terminal where the export commands were run and then calling ```rostopic list``` on the computer with a display in the same terminal where the export commands were run. You should see the topics you expect to be on the SVEA car also available on the computer with a display. If this worked, you have some options for how you want to use it. You can either:
-1. call this script everytime you want to link the SVEA car and the computer with a display togther (the script only links the terminal window you run it in),
-2. add an [alias](https://mijingo.com/blog/creating-bash-aliases) to the end of the SVEA car and the computer's ```~/.bashrc``` to create a new bash command,
-3. you can add the contents of ```export_ros_ip.sh``` directly to the end of your ```~/.bashrc```,
-
-or some other preferred approach.
-
-# Documentation
-After cloning the repository, you can open the core library's documentation by opening `docs/library/_build/index.html` in your favorite browser.
-
-# Testing
-This repository is using pytests through the ros-pytests framework. To run the available tests, run
-```bash
-catkin run_tests
-```
-which will run any linked tests in each ROS package's CMakeList.txt
+-   Open a new terminal window
+-   `cd` to the workspace where the ZedM code lives
+-   source `devel/setup.bash` of that workspace
+-   Launch the ZedM camera with `roslaunch zed_wrapper zedm.launch`

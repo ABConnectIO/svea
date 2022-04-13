@@ -6,7 +6,7 @@ import numpy as np
 from svea.svea_managers.path_following_sveas import SVEAPurePursuit
 from svea.states import VehicleState
 from svea.localizers import LocalizationInterface
-from svea.controllers.pure_pursuit import PurePursuitController
+from svea.controllers.pure_pursuit import PurePursuitController, PurePursuitSpeedController
 from svea.data import BasicDataHandler, TrajDataHandler, RVIZPathHandler
 from svea.models.bicycle import SimpleBicycleModel
 from svea.simulators.sim_SVEA import SimSVEA
@@ -17,10 +17,10 @@ target_velocity = 1.0 # [m/s]
 dt = 0.01 # frequency of the model updates
 
 #TODO: create a trajectory that goes around the track
-xs = [-2.33, 10.48]
-ys = [-7.09, 11.71]
-traj_x = np.linspace(xs[0], xs[1]).tolist()
-traj_y = np.linspace(ys[0], ys[1]).tolist()
+xs = [-2.33, 10.48, 5.94 , -7.02]
+ys = [-7.09, 11.71, 14.76, -3.91]
+traj_x = np.array(xs)#np.linspace(xs[0], xs[1]).tolist()
+traj_y = np.array(ys)#np.linspace(ys[0], ys[1]).tolist()
 ###############################################################################
 
 ## INIT #######################################################################
@@ -68,7 +68,7 @@ def main():
 
     # start pure pursuit SVEA manager
     svea = SVEAPurePursuit(LocalizationInterface,
-                           PurePursuitController,
+                           PurePursuitSpeedController,
                            traj_x, traj_y,
                            data_handler = DataHandler)
     svea.start(wait=True)
